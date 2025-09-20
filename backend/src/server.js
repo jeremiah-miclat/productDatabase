@@ -1,6 +1,8 @@
 import express from "express";
 import notesRoutes from "./routes/notesRoutes.js"
 import userSchemaRoutes from "./routes/UserSchemaRoutes.js"
+import dbRoutes from "./routes/databaseRoutes.js"
+import productRoutes from "./routes/productRoutes.js"
 import { connectDB } from "./config/db.js";
 import dotenv from "dotenv"
 import rateLimiter from "./middleware/rateLimiter.js";
@@ -31,6 +33,10 @@ app.use(rateLimiter)
 app.use("/api/product", notesRoutes);
 
 app.use("/api/schemas", userSchemaRoutes);
+
+app.use("/api/databases", dbRoutes);
+
+app.use("/api/products", productRoutes);
 
 if (process.env.NODE_ENV === "production") {
 
