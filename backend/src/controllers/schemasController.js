@@ -1,5 +1,8 @@
 // controllers/userSchemaController.js
 import UserSchema from "../models/UserSchema.js";
+import Database from "../models/Database.js";
+
+
 
 // Get all user schemas
 export async function getAllSchemas(req, res) {
@@ -72,18 +75,27 @@ export async function updateSchema(req, res) {
   }
 }
 
-// Delete schema
+// ✅ Delete schema
 export async function deleteSchema(req, res) {
   try {
-    const deletedSchema = await UserSchema.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
 
-    if (!deletedSchema) {
+    // Check if schema is being used in any database
+    const inUse = await Database.findOne({ schema: id });
+    if (inUse) {
+      return res.status(400).json({
+        message: "Schema cannot be deleted because it is in use by a database",
+      });
+    }
+
+    const deleted = await UserSchema.findByIdAndDelete(id);
+    if (!deleted) {
       return res.status(404).json({ message: "Schema not found" });
     }
 
-    res.status(200).json({ message: "Deleted successfully" });
+    res.status(200).json({ message: "Schema deleted successfully" });
   } catch (error) {
-    console.error("Server error in deleteSchema:", error);
+    console.error("deleteSchema error:", error);
     res.status(500).json({ message: "Server error" });
   }
 }

@@ -15,15 +15,16 @@ const App = () => {
     <div className="relative h-full w-full">
       <div className="absolute inset-0 -z-10 h-full w-full items-center px-5 py-24 [background:radial-gradient(125%_125%_at_50%_10%,#000_60%,#00FF9D40_100%)]" />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<DatabasesPage />} />
         <Route path="/schemas" element={<SchemasPage />} />
         <Route path="/schemas/create" element={<CreateSchemaPage />} />
         <Route path="/databases/create" element={<CreateDatabasePage />} /> 
         <Route path="/databases/:id/products/create" element={<CreateProductPage />} />
+        <Route path="/databases/:id/edit" element={<CreateDatabasePage />} />
         <Route path="/create" element={<CreatePage />} />
         <Route path="/product/:id" element={<NoteDetailPage />} />
         <Route path="/databases" element={<DatabasesPage />} /> 
-        <Route path="/databases/:id" element={<DatabaseDetailPage />} />
+        <Route path="/databases/:id/products" element={<DatabaseDetailPage />} />
       </Routes>
     </div>
   );

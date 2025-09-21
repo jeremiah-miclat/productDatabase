@@ -25,7 +25,7 @@ const SchemaCard = ({ schema, setSchemas }) => {
                   toast.success("Schema deleted successfully");
                 } catch (error) {
                   console.error("Error in handleDelete", error);
-                  toast.error("Failed to delete schema");
+                  toast.error(error.response?.data?.message || "Failed to delete schema");
                 }
                 toast.dismiss(t.id);
               }}

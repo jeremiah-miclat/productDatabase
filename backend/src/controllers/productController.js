@@ -1,13 +1,16 @@
 import Product from "../models/Product.js";
 import Database from "../models/Database.js";
+import UserSchema from "../models/UserSchema.js";
 
 // Get all products for a specific database
 export const getProductsByDatabase = async (req, res) => {
   try {
-    const { database } = req.query;
-    if (!database) return res.status(400).json({ message: "Database ID required" });
+    const { database } = req.query; // database = db._id from frontend
+    if (!database) {
+      return res.status(400).json({ message: "Database ID required" });
+    }
 
-    const products = await Product.find({ database });
+    const products = await Product.find({ "database.id": database });
     res.json(products);
   } catch (error) {
     console.error("getProductsByDatabase error:", error);
@@ -33,12 +36,31 @@ export const createProduct = async (req, res) => {
     const { database: databaseId, data } = req.body;
 
     // Validate database exists
-    const database = await Database.findById(databaseId);
-    if (!database) return res.status(404).json({ message: "Database not found" });
+    const database = await Database.findById(databaseId).populate("schema");
+    if (!database) {
+      return res.status(404).json({ message: "Database not found" });
+    }
 
-    const product = new Product({ database: databaseId, data });
+    // Grab schema details (linked from the Database)
+    const schema = await UserSchema.findById(database.schema);
+    if (!schema) {
+      return res.status(404).json({ message: "Schema not found" });
+    }
+
+    // Construct product with both db + schema info
+    const product = new Product({
+      database: {
+        id: database._id,
+        name: database.name,
+      },
+      userSchema: {
+        id: schema._id,
+        name: schema.schemaName,
+      },
+      data,
+    });
+
     await product.save();
-
     res.status(201).json(product);
   } catch (error) {
     console.error("createProduct error:", error);
@@ -46,14 +68,22 @@ export const createProduct = async (req, res) => {
   }
 };
 
+
 // Update a product
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const { data } = req.body;
 
-    const product = await Product.findByIdAndUpdate(id, { data }, { new: true });
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { data },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     res.json(product);
   } catch (error) {
@@ -61,6 +91,7 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Delete a product
 export const deleteProduct = async (req, res) => {
