@@ -1,10 +1,12 @@
 import { PenSquareIcon, Trash2Icon, PackageIcon } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { formatDate } from "../lib/utils";
 import api from "../lib/axios";
 import toast from "react-hot-toast";
 
 const ProductCard = ({ product, setProducts }) => {
+  const navigate = useNavigate();
+
   const handleDelete = (e, id) => {
     e.preventDefault();
 
@@ -45,38 +47,39 @@ const ProductCard = ({ product, setProducts }) => {
   };
 
   return (
-    <Link
-      to={`/products/${product._id}`}
+    <div
+      onClick={() => navigate(`/products/${product._id}/edit`)} // optional: view product page
       className="card bg-base-100 hover:shadow-lg transition-all duration-200 
-      border-l-4 border-solid border-secondary"
+      border-l-4 border-solid border-secondary cursor-pointer"
     >
       <div className="card-body">
         {/* Header */}
         <div className="flex items-center gap-2">
           <PackageIcon className="size-5 text-secondary" />
-<h3 className="card-title text-base-content">
-  {product.data?.name ||
-  product.data?.Name ||
-   product.title ||
-   product.Title ||
-   product.userSchema?.name ||
-   "Untitled Product"}
-</h3>
+          <h3 className="card-title text-base-content">
+            {product.data?.name ||
+              product.data?.Name ||
+              product.title ||
+              product.Title ||
+              product.userSchema?.name ||
+              "Untitled Product"}
+          </h3>
         </div>
 
-        {/* Dynamic fields from product.data */}
+        {/* Dynamic fields */}
         <div className="text-base-content/70 text-sm mt-2 space-y-1">
           {Object.entries(product.data || {}).map(([key, value]) => (
             <p key={key}>
-              <span className="font-medium capitalize">{key}:</span> {String(value)}
+              <span className="font-medium capitalize">{key}:</span>{" "}
+              {String(value)}
             </p>
           ))}
         </div>
 
         {/* Extra Info */}
         <div className="text-base-content/60 text-xs mt-2 italic">
-          Schema: {product.userSchema?.name || "Unknown"} | 
-          Database: {product.database?.name || "Unknown"}
+          Schema: {product.userSchema?.name || "Unknown"} | Database:{" "}
+          {product.database?.name || "Unknown"}
         </div>
 
         {/* Footer */}
@@ -85,20 +88,30 @@ const ProductCard = ({ product, setProducts }) => {
             {formatDate(new Date(product.createdAt))}
           </span>
           <div className="flex items-center gap-1">
-            <button type="button" className="btn btn-ghost btn-xs">
+            {/* Edit button links to create/edit page */}
+            <Link
+              to={`/products/${product._id}/edit`}
+              onClick={(e) => e.stopPropagation()} // prevent card click
+              className="btn btn-ghost btn-xs"
+            >
               <PenSquareIcon className="size-4" />
-            </button>
+            </Link>
+
+            {/* Delete button */}
             <button
               type="button"
               className="btn btn-ghost btn-xs text-error"
-              onClick={(e) => handleDelete(e, product._id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(e, product._id);
+              }}
             >
               <Trash2Icon className="size-4" />
             </button>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
 

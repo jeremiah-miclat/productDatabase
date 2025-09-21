@@ -20,6 +20,7 @@ const App = () => {
         <Route path="/schemas/create" element={<CreateSchemaPage />} />
         <Route path="/databases/create" element={<CreateDatabasePage />} /> 
         <Route path="/databases/:id/products/create" element={<CreateProductPage />} />
+        <Route path="/products/:productId/edit" element={<CreateProductPage />} />
         <Route path="/databases/:id/edit" element={<CreateDatabasePage />} />
         <Route path="/create" element={<CreatePage />} />
         <Route path="/product/:id" element={<NoteDetailPage />} />

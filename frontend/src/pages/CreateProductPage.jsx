@@ -1,49 +1,76 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router";
+import { useParams, Link, useNavigate, useLocation } from "react-router";
 import toast from "react-hot-toast";
 import api from "../lib/axios";
 import { ArrowLeftIcon } from "lucide-react";
 import Navbar from "../components/Navbar";
 import RateLimitedUI from "../components/RateLimitedUI";
 
-const CreateProductPage = () => {
-  const { id } = useParams(); // passed from /databases/:id/products/create
+const CreateEditProductPage = () => {
+  const { id, productId } = useParams();
+  // id = databaseId for creation
+  // productId = product being edited
+
   const [database, setDatabase] = useState(null);
   const [fields, setFields] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isRateLimited, setRateLimited] = useState(false);
+
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEdit = !!productId; 
+  const databaseId = isEdit ? null : id;
+useEffect(() => {
+  const fetchData = async () => {
+    console.log("Params:", { id, productId, isEdit,databaseId });
+    try {
+      let db;
 
-  useEffect(() => {
-    const fetchDatabase = async () => {
-      try {
-        const res = await api.get(`/databases/${id}`);
-        setDatabase(res.data);
+      if (isEdit) {
+        // FETCH PRODUCT
+        const productRes = await api.get(`/products/${productId}`);
+        const product = productRes.data;
+        console.log("✅ Product fetched:", product);
 
-        console.log("Fetched database:", res.data);
+        // FETCH DATABASE (from product)
+        const dbRes = await api.get(`/databases/${product.database.id}`);
+        db = dbRes.data;
 
-        // Initialize dynamic fields
-        if (res.data.schema?.fields) {
-          const initFields = {};
-          res.data.schema.fields.forEach((f) => (initFields[f.name] = ""));
-          setFields(initFields);
-        }
+        setDatabase(db);
 
-        setRateLimited(false);
-      } catch (error) {
-        console.error("Error fetching database", error);
-        if (error.response?.status === 429) {
-          setRateLimited(true);
-        } else {
-          toast.error("Failed to load database");
-        }
-      } finally {
-        setLoading(false);
+        // Initialize fields with product data
+        const initFields = {};
+        (db.schema?.fields || []).forEach((f) => {
+          initFields[f.name] = product.data?.[f.name] ?? "";
+        });
+        setFields(initFields);
+
+      } else {
+        // CREATING NEW PRODUCT
+        const dbRes = await api.get(`/databases/${databaseId}`);
+        db = dbRes.data;
+        setDatabase(db);
+
+        // Initialize empty fields
+        const initFields = {};
+        (db.schema?.fields || []).forEach((f) => (initFields[f.name] = ""));
+        setFields(initFields);
       }
-    };
-    fetchDatabase();
-  }, [id]);
+
+      setRateLimited(false);
+    } catch (error) {
+      console.error("Error fetching data", error);
+      if (error.response?.status === 429) setRateLimited(true);
+      else toast.error("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [id, productId, isEdit]);
+
 
   const handleInputChange = (name, value) => {
     setFields((prev) => ({ ...prev, [name]: value }));
@@ -54,15 +81,21 @@ const CreateProductPage = () => {
     setSubmitting(true);
 
     try {
-      await api.post("/products", {
-        database: database._id,
-        data: fields,
-      });
-      toast.success("Product created successfully!");
-      navigate(`/databases/${database._id}/products`);
+      if (isEdit && productId) {
+        await api.put(`/products/${productId}`, { data: fields });
+        toast.success("Product updated successfully!");
+        navigate(`/databases/${database._id}/products`);
+      } else {
+        await api.post("/products", {
+          database: database._id,
+          data: fields,
+        });
+        toast.success("Product created successfully!");
+        navigate(`/databases/${database._id}/products`);
+      }
     } catch (error) {
-      console.error("Error creating product", error);
-      toast.error("Failed to create product");
+      console.error("Error saving product", error);
+      toast.error("Failed to save product");
     } finally {
       setSubmitting(false);
     }
@@ -70,13 +103,14 @@ const CreateProductPage = () => {
 
   return (
     <div className="min-h-screen">
+      <Navbar />
 
       {isRateLimited && <RateLimitedUI />}
 
       {!isRateLimited && (
         <div className="max-w-2xl mx-auto p-4 mt-6">
           <Link
-            to={`/databases/${id}/products`}
+            to={isEdit ? `/databases/${database?._id}/products` : `/databases/${id}/products`}
             className="btn btn-ghost mb-6 flex items-center gap-2"
           >
             <ArrowLeftIcon className="size-5" />
@@ -88,10 +122,11 @@ const CreateProductPage = () => {
           ) : (
             <form onSubmit={handleSubmit} className="card bg-base-100 p-4">
               <h2 className="text-2xl font-bold mb-4">
-                Create Product in {database?.name ?? "Unknown Database"}
+                {isEdit ? "Edit Product" : "Create Product"} in{" "}
+                {database?.name ?? "Unknown Database"}
               </h2>
 
-              {database?.schema?.fields?.map((f) => (
+              {(database?.schema?.fields || []).map((f) => (
                 <div className="form-control mb-4" key={f.name}>
                   <label className="label">
                     <span className="label-text">{f.name}</span>
@@ -110,7 +145,13 @@ const CreateProductPage = () => {
                 className="btn btn-primary"
                 disabled={submitting}
               >
-                {submitting ? "Creating..." : "Create Product"}
+                {submitting
+                  ? isEdit
+                    ? "Updating..."
+                    : "Creating..."
+                  : isEdit
+                  ? "Update Product"
+                  : "Create Product"}
               </button>
             </form>
           )}
@@ -120,4 +161,4 @@ const CreateProductPage = () => {
   );
 };
 
-export default CreateProductPage;
+export default CreateEditProductPage;
