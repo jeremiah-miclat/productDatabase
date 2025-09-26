@@ -9,6 +9,7 @@ import CreateDatabasePage from "./pages/CreateDatabasePage";
 import DatabasesPage from "./pages/DatabasePage"; 
 import DatabaseDetailPage from "./pages/DatabaseDetailPage"; 
 import CreateProductPage from "./pages/CreateProductPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="/product/:id" element={<NoteDetailPage />} />
         <Route path="/databases" element={<DatabasesPage />} /> 
         <Route path="/databases/:id/products" element={<DatabaseDetailPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </div>
   );
